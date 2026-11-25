@@ -496,47 +496,51 @@
     return res;
   }
 
-  // 學生選擇班別後，動態過濾姓名下拉選單
+  // 學生選擇班別後，動態更新姓名下拉選單（加強容錯防護）
   function updateNameOptions() {
-    const classSelect = document.getElementById('select-class');
-    const nameSelect = document.getElementById('select-name');
-    const selectedClass = classSelect.value;
+    try {
+      const classSelect = document.getElementById('select-class');
+      const nameSelect = document.getElementById('select-name');
+      const selectedClass = classSelect.value;
 
-    nameSelect.innerHTML = '';
+      nameSelect.innerHTML = '';
 
-    if (!selectedClass) {
-      nameSelect.disabled = true;
-      const opt = document.createElement('option');
-      opt.value = "";
-      opt.innerText = "-- 請先選擇班別 --";
-      nameSelect.appendChild(opt);
-      return;
+      if (!selectedClass || !studentData[selectedClass]) {
+        nameSelect.disabled = true;
+        const opt = document.createElement('option');
+        opt.value = "";
+        opt.innerText = "-- 請先選擇班別 --";
+        nameSelect.appendChild(opt);
+        return;
+      }
+
+      nameSelect.disabled = false;
+      const defaultOpt = document.createElement('option');
+      defaultOpt.value = "";
+      defaultOpt.innerText = "-- 請選擇你的名字 --";
+      nameSelect.appendChild(defaultOpt);
+
+      const names = studentData[selectedClass];
+      names.forEach(name => {
+        const opt = document.createElement('option');
+        opt.value = name;
+        opt.innerText = name;
+        nameSelect.appendChild(opt);
+      });
+    } catch (e) {
+      console.error("更新姓名選單出錯：", e);
     }
-
-    nameSelect.disabled = false;
-    const defaultOpt = document.createElement('option');
-    defaultOpt.value = "";
-    defaultOpt.innerText = "-- 請選擇你的名字 --";
-    nameSelect.appendChild(defaultOpt);
-
-    const names = studentData[selectedClass];
-    names.forEach(name => {
-      const opt = document.createElement('option');
-      opt.value = name;
-      opt.innerText = name;
-      nameSelect.appendChild(opt);
-    });
   }
 
-  // 學生點擊程度卡片
+  // 學生點擊程度卡片開始挑戰
   function selectLevel(idx) {
     const classSelect = document.getElementById('select-class');
     const nameSelect = document.getElementById('select-name');
-    const selectedClass = classSelect.value;
-    const selectedName = nameSelect.value;
+    const selectedClass = classSelect ? classSelect.value : "";
+    const selectedName = nameSelect ? nameSelect.value : "";
 
     if (!selectedClass || !selectedName) {
-      alert("💡 請先選擇班別及你的名字，才能開始挑戰！");
+      alert("💡 請先選擇你的「班別」與「姓名」，才能開始挑戰！");
       return;
     }
 
@@ -544,12 +548,10 @@
     studentInfo.name = selectedName;
     currentStageIdx = idx;
 
-    // 切換至遊戲運行視圖
     document.getElementById('display-user').innerText = `學生：${selectedClass} 班 - ${selectedName}`;
     document.getElementById('view-login').style.display = 'none';
     document.getElementById('view-game').style.display = 'block';
 
-    // 第一關不計時，重設時間欄文字
     document.getElementById('display-timer').innerText = `第一關：探索中`;
     document.getElementById('display-timer').classList.remove('timer-alert');
 
@@ -629,14 +631,11 @@
     document.getElementById('quiz-score').innerText = `目前得分：0 分`;
     document.getElementById('quiz-progress').innerText = `已答題數：0 題`;
 
-    // 重設求助次數為 5 次
     remainingHints = MAX_HINTS;
     updateHintButtonUI();
 
-    // 初始化該程度的不重覆出題池
     generateQuizPool(stage.min, stage.max);
 
-    // 啟動倒數計時器
     timeLeftSeconds = stage.timeLimit;
     document.getElementById('display-timer').innerText = `剩餘時間：${timeLeftSeconds} 秒`;
     
@@ -669,25 +668,20 @@
     }
   }
 
-  // 構造並隨機打亂不重覆題目的出題池
   function generateQuizPool(min, max) {
     quizPool = [];
     for (let i = min; i <= max; i++) {
       quizPool.push(i);
     }
 
-    // 隨機置亂
     for (let i = quizPool.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1));
       [quizPool[i], quizPool[j]] = [quizPool[j], quizPool[i]];
     }
 
-    // 70% 權重抽新學區間，30% 舊區間
     if (min > 1) {
       let oldPool = [];
-      for (let i = 1; i < min; i++) {
-        oldPool.push(i);
-      }
+      for (let i = 1; i < min; i++) oldPool.push(i);
       for (let i = oldPool.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
         [oldPool[i], oldPool[j]] = [oldPool[j], oldPool[i]];
@@ -706,9 +700,7 @@
       quizPool = mixedPool;
     }
 
-    if (Math.random() < 0.15) {
-      quizPool.unshift(1);
-    }
+    if (Math.random() < 0.15) quizPool.unshift(1);
   }
 
   function renderQuizQuestion() {
@@ -718,7 +710,6 @@
     }
 
     currentQuizNum = quizPool.shift();
-
     document.getElementById('quiz-target').innerText = currentQuizNum;
     document.getElementById('quiz-feedback').style.display = 'none';
     document.getElementById('btn-quiz-next').style.display = 'none';
@@ -772,7 +763,6 @@
     saveAndSubmitScore();
   }
 
-  /* ========== 💡 限制 5 次求助功能 ========== */
   function showHint() {
     if (remainingHints <= 0) return;
 
@@ -827,46 +817,42 @@
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload)
     }).then(() => {
-      console.log("✅ 成績上傳成功！立刻讀取最新排行榜。");
       setTimeout(() => {
         fetchCloudLeaderboard(stages[currentStageIdx].name, false);
       }, 1500);
     }).catch(err => {
-      console.error("❌ 成績上傳失敗：", err);
+      console.error("成績上傳失敗：", err);
       alert("成績上傳失敗，請檢查網絡連結！");
       document.getElementById('loading-spinner').style.display = 'none';
     });
   }
 
-  // 💡 關鍵修復：智慧名稱清洗過濾器
+  // 💡 強韌名稱清洗過濾器：百分百精準還原「[4D] 張語城」
   function sanitizeStudentDisplay(rawClassName, rawName) {
-    let combined = String(rawClassName) + " " + String(rawName);
+    const text = (String(rawClassName) + " " + String(rawName));
 
-    // 檢查已知 10 位學生的完整名單
-    const allStudents = [
-      { class: "4C", name: "葉卓霖" },
-      { class: "4C", name: "林子蕙" },
-      { class: "4C", name: "黎宇皓" },
-      { class: "4C", name: "黃芷桐" },
-      { class: "4C", name: "陳希婷" },
-      { class: "4D", name: "陳庭欣" },
-      { class: "4D", name: "張語城" },
-      { class: "4D", name: "區思宇" },
-      { class: "4D", name: "羅耀升" },
-      { class: "4D", name: "曾浩楓" }
+    const roster = [
+      { c: "4C", n: "葉卓霖" },
+      { c: "4C", n: "林子蕙" },
+      { c: "4C", n: "黎宇皓" },
+      { c: "4C", n: "黃芷桐" },
+      { c: "4C", n: "陳希婷" },
+      { c: "4D", n: "陳庭欣" },
+      { c: "4D", n: "張語城" },
+      { c: "4D", n: "區思宇" },
+      { c: "4D", n: "羅耀升" },
+      { c: "4D", n: "曾浩楓" }
     ];
 
-    // 如果字串包含某位學生姓名，直接以該學生的正規班別與姓名輸出！
-    for (let st of allStudents) {
-      if (combined.includes(st.name)) {
-        return `[${st.class}] ${st.name}`;
+    for (let st of roster) {
+      if (text.indexOf(st.n) !== -1) {
+        return `[${st.c}] ${st.n}`;
       }
     }
 
-    // 保底：去除中括號與日期字串
-    let cleanClass = String(rawClassName).replace(/\[.*?\]/g, '').trim();
-    let cleanName = String(rawName).replace(/\[.*?\]/g, '').trim();
-    return `[${cleanClass || '4C/4D'}] ${cleanName}`;
+    let cleanC = String(rawClassName).replace(/[\[\]]/g, '').trim();
+    let cleanN = String(rawName).replace(/[\[\]]/g, '').trim();
+    return `[${cleanC}] ${cleanN}`;
   }
 
   function fetchCloudLeaderboard(filterStageName, showSelectorTabs) {
@@ -885,20 +871,22 @@
     document.getElementById('board-title').innerText = `🏆 ${filterStageName} 排行榜`;
 
     fetch(GOOGLE_SHEET_WEBAPP_URL)
-      .then(response => response.json())
+      .then(response => {
+        if (!response.ok) throw new Error("HTTP error " + response.status);
+        return response.json();
+      })
       .then(res => {
         document.getElementById('loading-spinner').style.display = 'none';
         
-        if (res.status === "success") {
+        if (res && res.status === "success") {
           let board = res.leaderboard || [];
 
-          // 過濾指定程度的數據（支援容錯包含關係）
           board = board.filter(r => {
             let sName = String(r.stageName || '');
-            return sName.includes(filterStageName) || String(r.className).includes(filterStageName);
+            let cName = String(r.className || '');
+            return sName.indexOf(filterStageName) !== -1 || cName.indexOf(filterStageName) !== -1;
           });
 
-          // 核心同分排序：得分較高優先 ➔ 挑戰次數較少優先
           board.sort((a, b) => {
             let scoreA = parseInt(a.score) || 0;
             let scoreB = parseInt(b.score) || 0;
@@ -911,13 +899,13 @@
 
           renderTable(board);
         } else {
-          alert("雲端讀取失敗：" + res.message);
+          document.getElementById('leaderboard-rows').innerHTML = `<tr><td colspan="5" style="color:#94a3b8; padding:20px 0;">目前無紀錄或讀取失敗</td></tr>`;
         }
       })
       .catch(err => {
         console.error("雲端讀取錯誤：", err);
         document.getElementById('loading-spinner').style.display = 'none';
-        document.getElementById('leaderboard-rows').innerHTML = `<tr><td colspan="5" style="color:var(--danger); padding:20px 0;">⚠️ 同步失敗，請重新整理網頁！</td></tr>`;
+        document.getElementById('leaderboard-rows').innerHTML = `<tr><td colspan="5" style="color:var(--danger); padding:20px 0;">⚠️ 雲端讀取異常，請稍後再試！</td></tr>`;
       });
   }
 
@@ -925,7 +913,7 @@
     const tbody = document.getElementById('leaderboard-rows');
     tbody.innerHTML = '';
 
-    if (board.length === 0) {
+    if (!board || board.length === 0) {
       tbody.innerHTML = `<tr><td colspan="5" style="color:#94a3b8; padding: 20px 0;">該程度暫無紀錄，快來當第一位挑戰者吧！</td></tr>`;
       return;
     }
@@ -937,7 +925,6 @@
       else if (idx === 1) rankEmoji = "🥈";
       else if (idx === 2) rankEmoji = "🥉";
 
-      // 💡 透過智慧過濾函數輸出漂亮的班別與姓名
       const cleanDisplay = sanitizeStudentDisplay(r.className, r.name);
       const cleanScore = parseInt(r.score) || 0;
       const cleanAttempts = parseInt(r.attempts) || 1;
@@ -970,10 +957,9 @@
   function updateTabHighlight(activeIdx) {
     stages.forEach((_, idx) => {
       const tab = document.getElementById(`tab-stage-${idx}`);
-      if (idx === activeIdx) {
-        tab.classList.add('active');
-      } else {
-        tab.classList.remove('active');
+      if (tab) {
+        if (idx === activeIdx) tab.classList.add('active');
+        else tab.classList.remove('active');
       }
     });
   }
