@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>質數限時大闖關（Google Sheet 自動同步版）</title>
+  <title>質數限時大闖關（雲端實時排行版）</title>
   <style>
     :root {
       --primary: #4361ee;
@@ -277,6 +277,15 @@
       z-index: 100;
       display: none;
     }
+
+    /* 雲端讀取 Loading 提示 */
+    .loading-spinner {
+      font-size: 14px;
+      color: var(--primary);
+      margin: 15px 0;
+      font-weight: bold;
+      display: none;
+    }
   </style>
 </head>
 <body>
@@ -344,7 +353,7 @@
       </div>
     </div>
     
-    <button class="action-btn" style="background:#475569; margin-top:20px;" onclick="showSelectionLeaderboard()">🏆 選擇查看各程度排行榜</button>
+    <button class="action-btn" style="background:#475569; margin-top:20px;" onclick="showSelectionLeaderboard()">🏆 選擇查看各程度雲端排行榜</button>
   </div>
 
   <!-- ================= 遊戲運行主畫面 ================= -->
@@ -393,7 +402,7 @@
     <h3 id="board-title" style="color: var(--primary); margin-bottom:5px;">🏆 排行榜</h3>
     <div style="font-size:12px; color:#64748b; margin-bottom:12px;">同分排序：得分較高優先 ➔ 挑戰次數較少優先</div>
     
-    <!-- 程度切換導覽（僅在登錄頁點進來時顯示，供自由查看） -->
+    <!-- 程度切換導覽 -->
     <div class="board-switch-container" id="board-selector-tabs">
       <button class="board-switch-btn" id="tab-stage-0" onclick="switchBoardTab(0)">程度一</button>
       <button class="board-switch-btn" id="tab-stage-1" onclick="switchBoardTab(1)">程度二</button>
@@ -401,6 +410,9 @@
       <button class="board-switch-btn" id="tab-stage-3" onclick="switchBoardTab(3)">程度四</button>
       <button class="board-switch-btn" id="tab-stage-4" onclick="switchBoardTab(4)">程度五</button>
     </div>
+
+    <!-- 載入中狀態提示 -->
+    <div class="loading-spinner" id="loading-spinner">☁️ 正在與 Google Sheet 實時同步雲端排行中...</div>
 
     <div style="max-height: 300px; overflow-y: auto;">
       <table class="leaderboard-table">
@@ -430,7 +442,7 @@
 </div>
 
 <script>
-  // ⚙️ 陳老師專屬 Google Apps Script Web App 串接網址
+  // ⚙️ Google Apps Script Web App 實時雲端同步網址
   const GOOGLE_SHEET_WEBAPP_URL = "https://script.google.com/macros/s/AKfycbxKwcPi8_wIToAn_4KaWC5l26iPTyAoNi_HEYZVnhNiy5Q9CsKdHckVVqmUIoCSKUqX_w/exec";
 
   // 10位參賽學生名單配置
@@ -538,7 +550,7 @@
     document.getElementById('view-login').style.display = 'none';
     document.getElementById('view-game').style.display = 'block';
 
-    // 第一關不計時，重設頂端時間欄文字顯示
+    // 第一關不計時，重設時間欄文字
     document.getElementById('display-timer').innerText = `第一關：探索中`;
     document.getElementById('display-timer').classList.remove('timer-alert');
 
@@ -758,7 +770,7 @@
 
     alert(`⏰ 時間到！你在此次限時挑戰中答對了 ${quizScore / 10} 題，共獲得 ${quizScore} 分！`);
 
-    saveAndShowLeaderboard();
+    saveAndSubmitScore();
   }
 
   /* ========== 💡 限制 5 次求助功能 ========== */
@@ -782,9 +794,15 @@
     setTimeout(() => modal.style.display = 'none', 3000);
   }
 
-  /* ========== 🌐 自動同步 Google Sheet ========== */
-  function syncRecordToGoogleSheet(record) {
-    if (!GOOGLE_SHEET_WEBAPP_URL) return;
+  /* ========== 🏆 雲端讀取與寫入 (聯動 Google Sheet) ========== */
+
+  // 1. 完成挑戰，提交成績到 Google Sheet
+  function saveAndSubmitScore() {
+    document.getElementById('view-game').style.display = 'none';
+    document.getElementById('view-login').style.display = 'none';
+    document.getElementById('view-leaderboard').style.display = 'block';
+    document.getElementById('loading-spinner').style.display = 'block';
+    document.getElementById('leaderboard-rows').innerHTML = ''; // 清空舊數據
 
     const hkTimeString = new Date().toLocaleString("zh-HK", {
       timeZone: "Asia/Hong_Kong",
@@ -799,76 +817,35 @@
 
     const payload = {
       timestamp: hkTimeString,
-      className: record.className,
-      name: record.name,
-      stageName: record.stageName,
-      score: record.score,
-      attempts: record.attempts
-    };
-
-    fetch(GOOGLE_SHEET_WEBAPP_URL, {
-      method: "POST",
-      mode: "no-cors",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload)
-    }).then(() => {
-      console.log("✅ 成績已成功自動同步至 Google Sheet！", payload);
-    }).catch(err => {
-      console.error("❌ Google Sheet 同步失敗：", err);
-    });
-  }
-
-  /* ========== 🏆 排行榜儲存與顯示 ========== */
-  function getLocalLeaderboard() {
-    const data = localStorage.getItem('prime_leaderboard');
-    return data ? JSON.parse(data) : [];
-  }
-
-  function saveAndShowLeaderboard() {
-    const key = `${studentInfo.className}_${studentInfo.name}_${stages[currentStageIdx].name}`;
-    let board = getLocalLeaderboard();
-    
-    let existRecord = board.find(r => r.key === key);
-    let finalAttempts = 1;
-    let finalScore = quizScore;
-
-    if (existRecord) {
-      existRecord.attempts = (existRecord.attempts || 1) + 1;
-      finalAttempts = existRecord.attempts;
-      if (quizScore > existRecord.score) {
-        existRecord.score = quizScore;
-      }
-      finalScore = existRecord.score;
-    } else {
-      board.push({
-        key: key,
-        className: studentInfo.className,
-        name: studentInfo.name,
-        stageName: stages[currentStageIdx].name,
-        score: quizScore,
-        attempts: 1
-      });
-    }
-
-    localStorage.setItem('prime_leaderboard', JSON.stringify(board));
-    
-    // 背景自動同步至 Google Sheet
-    syncRecordToGoogleSheet({
       className: studentInfo.className,
       name: studentInfo.name,
       stageName: stages[currentStageIdx].name,
-      score: finalScore,
-      attempts: finalAttempts
-    });
+      score: quizScore
+    };
 
-    // 學生完成挑戰後，【只顯示】他所挑戰的那個程度的排行榜
-    showLeaderboardView(stages[currentStageIdx].name, false);
+    // 發送 POST 請求寫入 Google Sheet
+    fetch(GOOGLE_SHEET_WEBAPP_URL, {
+      method: "POST",
+      mode: "no-cors", // 與 Google Apps Script 進行無跨域交互
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    }).then(() => {
+      console.log("✅ 成績上傳成功！立刻讀取最新排行榜。");
+      // 成功後延遲 1.5 秒讀取，防止 Google 伺服器未及時同步寫入
+      setTimeout(() => {
+        fetchCloudLeaderboard(stages[currentStageIdx].name, false);
+      }, 1500);
+    }).catch(err => {
+      console.error("❌ 成績上傳失敗：", err);
+      alert("成績上傳失敗，請檢查網絡連結！");
+      document.getElementById('loading-spinner').style.display = 'none';
+    });
   }
 
-  function showLeaderboardView(filterStageName, showSelectorTabs) {
-    document.getElementById('view-game').style.display = 'none';
-    document.getElementById('view-login').style.display = 'none';
-    document.getElementById('view-leaderboard').style.display = 'block';
+  // 2. 從 Google Sheet 實時讀取成績數據
+  function fetchCloudLeaderboard(filterStageName, showSelectorTabs) {
+    document.getElementById('loading-spinner').style.display = 'block';
+    document.getElementById('leaderboard-rows').innerHTML = '';
 
     const tabsContainer = document.getElementById('board-selector-tabs');
     if (showSelectorTabs) {
@@ -881,15 +858,38 @@
 
     document.getElementById('board-title').innerText = `🏆 ${filterStageName} 排行榜`;
 
-    let board = getLocalLeaderboard();
-    board = board.filter(r => r.stageName === filterStageName);
+    // 發送 GET 請求獲取 Google Sheet 的數據
+    fetch(GOOGLE_SHEET_WEBAPP_URL)
+      .then(response => response.json())
+      .then(res => {
+        document.getElementById('loading-spinner').style.display = 'none';
+        
+        if (res.status === "success") {
+          let board = res.leaderboard || [];
 
-    // 排序：得分越高越前 -> 挑戰次數越少越前
-    board.sort((a, b) => {
-      if (b.score !== a.score) return b.score - a.score;
-      return (a.attempts || 1) - (b.attempts || 1);
-    });
+          // 過濾指定程度的數據
+          board = board.filter(r => r.stageName === filterStageName);
 
+          // 核心同分排序：得分較高優先 ➔ 挑戰次數較少優先
+          board.sort((a, b) => {
+            if (b.score !== a.score) return b.score - a.score;
+            return a.attempts - b.attempts;
+          });
+
+          // 渲染排行榜表格
+          renderTable(board);
+        } else {
+          alert("雲端讀取失敗：" + res.message);
+        }
+      })
+      .catch(err => {
+        console.error("雲端讀取錯誤：", err);
+        document.getElementById('loading-spinner').style.display = 'none';
+        document.getElementById('leaderboard-rows').innerHTML = `<tr><td colspan="5" style="color:var(--danger); padding:20px 0;">⚠️ 同步失敗，請重新整理網頁！</td></tr>`;
+      });
+  }
+
+  function renderTable(board) {
     const tbody = document.getElementById('leaderboard-rows');
     tbody.innerHTML = '';
 
@@ -910,19 +910,26 @@
         <td><b>[${r.className}]</b> ${r.name}</td>
         <td><span style="font-size:12px; color:#475569; font-weight:bold;">${r.stageName}</span></td>
         <td style="color:var(--success); font-weight:bold;">${r.score} 分</td>
-        <td>${r.attempts || 1} 次</td>
+        <td>${r.attempts} 次</td>
       `;
       tbody.appendChild(tr);
     });
   }
 
+  // 💡 在登錄頁按下「查看排行榜」按鈕時調用
   function showSelectionLeaderboard() {
-    showLeaderboardView("程度一", true);
+    document.getElementById('view-game').style.display = 'none';
+    document.getElementById('view-login').style.display = 'none';
+    document.getElementById('view-leaderboard').style.display = 'block';
+    
+    // 預設讀取並顯示程度一，顯示頂部自由切換頁籤
+    fetchCloudLeaderboard("程度一", true);
   }
 
+  // 頁籤切換時高亮更新並重繪排行榜
   function switchBoardTab(idx) {
     updateTabHighlight(idx);
-    showLeaderboardView(stages[idx].name, true);
+    fetchCloudLeaderboard(stages[idx].name, true);
   }
 
   function updateTabHighlight(activeIdx) {
