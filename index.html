@@ -36,8 +36,6 @@
       text-align: center;
       position: relative;
     }
-    
-    /* 登入與選擇介面 */
     .login-box h2 { color: var(--primary); margin-bottom: 5px; }
     .select-group { margin: 12px 0; }
     .select-group label {
@@ -58,7 +56,6 @@
       cursor: pointer;
     }
     .select-group select:focus { border-color: var(--primary); outline: none; }
-    
     .level-select-container {
       margin-top: 15px;
       display: flex;
@@ -92,8 +89,6 @@
       font-size: 13px;
       font-weight: bold;
     }
-
-    /* 遊戲內介面 */
     .user-info-bar {
       display: flex;
       justify-content: space-between;
@@ -116,7 +111,6 @@
     }
     .game-header { font-size: 20px; font-weight: 800; color: #0f172a; margin-bottom: 4px; }
     .game-sub { font-size: 13px; color: #64748b; margin-bottom: 12px; }
-    
     .progress-container {
       background: #e2e8f0;
       border-radius: 10px;
@@ -126,8 +120,6 @@
       overflow: hidden;
     }
     .progress-bar { background: var(--success); height: 100%; width: 0%; transition: width 0.3s; }
-    
-    /* 第一關網格 */
     .number-grid {
       display: grid;
       grid-template-columns: repeat(10, 1fr);
@@ -164,8 +156,6 @@
       25% { transform: translateX(-4px); }
       75% { transform: translateX(4px); }
     }
-    
-    /* 第二關答題 */
     .quiz-number { font-size: 64px; font-weight: 800; color: var(--primary); margin: 15px 0; }
     .quiz-options { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px; }
     .quiz-btn {
@@ -198,8 +188,6 @@
       border-color: #cbd5e1;
       cursor: not-allowed;
     }
-    
-    /* 彈窗、排行榜與通用按鈕 */
     .feedback-box { padding: 12px; border-radius: 10px; font-size: 14px; margin-top: 10px; display: none; }
     .feedback-correct { background: #d1fae5; color: #065f46; }
     .feedback-wrong { background: #fee2e2; color: #991b1b; }
@@ -222,8 +210,6 @@
       padding: 14px;
       margin-top: 14px;
     }
-    
-    /* 排行榜表格與切換按鈕樣式 */
     .board-switch-container {
       display: flex;
       justify-content: center;
@@ -261,8 +247,6 @@
     .leaderboard-table tr:nth-child(1) { background: #fef08a; font-weight: bold; }
     .leaderboard-table tr:nth-child(2) { background: #e2e8f0; }
     .leaderboard-table tr:nth-child(3) { background: #ffedd5; }
-
-    /* 求助提示浮層 */
     .hint-modal {
       position: absolute;
       top: 50%;
@@ -277,7 +261,6 @@
       z-index: 100;
       display: none;
     }
-
     .loading-spinner {
       font-size: 14px;
       color: var(--primary);
@@ -290,12 +273,11 @@
 <body>
 
 <div class="game-card">
-  <!-- ================= 登入與自由選關介面 ================= -->
+  <!-- 登入與自由選關介面 -->
   <div id="view-login">
     <h2>🎈 質數限時大闖關 (1-100)</h2>
     <p style="color:#64748b; font-size:14px; margin-bottom:15px;">請選擇你的班別與姓名，並選擇挑戰難度：</p>
     
-    <!-- 班別選擇 -->
     <div class="select-group">
       <label for="select-class">第一步：選擇你的班別 🏫</label>
       <select id="select-class" onchange="updateNameOptions()">
@@ -305,7 +287,6 @@
       </select>
     </div>
 
-    <!-- 姓名選擇 -->
     <div class="select-group" style="margin-bottom: 20px;">
       <label for="select-name">第二步：選擇你的姓名 👤</label>
       <select id="select-name" disabled>
@@ -355,7 +336,7 @@
     <button class="action-btn" style="background:#475569; margin-top:20px;" onclick="showSelectionLeaderboard()">🏆 選擇查看各程度雲端排行榜</button>
   </div>
 
-  <!-- ================= 遊戲運行主畫面 ================= -->
+  <!-- 遊戲運行主畫面 -->
   <div id="view-game" style="display:none;">
     <div class="user-info-bar">
       <span id="display-user">學生：-- --</span>
@@ -376,7 +357,7 @@
       </div>
     </div>
 
-    <!-- 第二關：限時不限題抽題測試 -->
+    <!-- 第二關：限時抽題測試 -->
     <div id="view-step2" style="display:none;">
       <div class="quiz-tools">
         <button id="btn-hint" class="btn-hint" onclick="showHint()">💡 求助小按鈕 (剩餘 5 次)</button>
@@ -396,12 +377,11 @@
     </div>
   </div>
 
-  <!-- ================= 排行榜視圖 ================= -->
+  <!-- 排行榜視圖 -->
   <div id="view-leaderboard" style="display:none;">
     <h3 id="board-title" style="color: var(--primary); margin-bottom:5px;">🏆 排行榜</h3>
     <div style="font-size:12px; color:#64748b; margin-bottom:12px;">同分排序：得分較高優先 ➔ 挑戰次數較少優先</div>
     
-    <!-- 程度切換導覽 -->
     <div class="board-switch-container" id="board-selector-tabs">
       <button class="board-switch-btn" id="tab-stage-0" onclick="switchBoardTab(0)">程度一</button>
       <button class="board-switch-btn" id="tab-stage-1" onclick="switchBoardTab(1)">程度二</button>
@@ -410,7 +390,6 @@
       <button class="board-switch-btn" id="tab-stage-4" onclick="switchBoardTab(4)">程度五</button>
     </div>
 
-    <!-- 載入中狀態提示 -->
     <div class="loading-spinner" id="loading-spinner">☁️ 正在與 Google Sheet 實時同步雲端排行中...</div>
 
     <div style="max-height: 300px; overflow-y: auto;">
@@ -420,20 +399,17 @@
             <th>名次</th>
             <th>班別/姓名</th>
             <th>程度</th>
-            <th>得分</th>
+            <th>最佳得分</th>
             <th>挑戰次數</th>
           </tr>
         </thead>
-        <tbody id="leaderboard-rows">
-          <!-- 數據動態插入 -->
-        </tbody>
+        <tbody id="leaderboard-rows"></tbody>
       </table>
     </div>
     
     <button class="action-btn" onclick="backToLogin()">返回主選單 ➔</button>
   </div>
 
-  <!-- 求助提示彈窗 -->
   <div id="hint-modal" class="hint-modal">
     <div style="font-weight: bold; margin-bottom: 6px; color: #fde047;">💡 質數記憶庫（3秒後關閉）</div>
     <div id="hint-text" style="font-size: 14px; line-height: 1.6;"></div>
@@ -441,16 +417,13 @@
 </div>
 
 <script>
-  // ⚙️ Google Apps Script Web App 實時雲端同步網址
   const GOOGLE_SHEET_WEBAPP_URL = "https://script.google.com/macros/s/AKfycbxKwcPi8_wIToAn_4KaWC5l26iPTyAoNi_HEYZVnhNiy5Q9CsKdHckVVqmUIoCSKUqX_w/exec";
 
-  // 10位參賽學生名單配置
   const studentData = {
     "4C": ["葉卓霖", "林子蕙", "黎宇皓", "黃芷桐", "陳希婷"],
     "4D": ["陳庭欣", "張語城", "區思宇", "羅耀升", "曾浩楓"]
   };
 
-  // 五個程度配置
   const stages = [
     { id: 1, name: "程度一", min: 1, max: 20, timeLimit: 60 },
     { id: 2, name: "程度二", min: 21, max: 30, timeLimit: 60 },
@@ -462,21 +435,17 @@
   let studentInfo = { className: "", name: "" };
   let currentStageIdx = 0;
 
-  // 第一關變數
   let foundPrimes = new Set();
   let currentPrimes = [];
 
-  // 第二關不重覆出題池與計分
   let quizPool = [];
   let quizCount = 0;
   let quizScore = 0;
   let currentQuizNum = 0;
   
-  // 💡 求助次數限制（每局上限 5 次）
   const MAX_HINTS = 5;
   let remainingHints = MAX_HINTS;
 
-  // 倒數計時器變數
   let timeLeftSeconds = 60;
   let timerInterval = null;
 
@@ -496,7 +465,6 @@
     return res;
   }
 
-  // 學生選擇班別後，動態更新姓名下拉選單（加強容錯防護）
   function updateNameOptions() {
     try {
       const classSelect = document.getElementById('select-class');
@@ -532,7 +500,6 @@
     }
   }
 
-  // 學生點擊程度卡片開始挑戰
   function selectLevel(idx) {
     const classSelect = document.getElementById('select-class');
     const nameSelect = document.getElementById('select-name');
@@ -564,7 +531,6 @@
     initStep1();
   }
 
-  /* ========== 第一關邏輯 ========== */
   function initStep1() {
     document.getElementById('view-step1').style.display = 'block';
     document.getElementById('view-step2').style.display = 'none';
@@ -618,7 +584,6 @@
     }
   }
 
-  /* ========== 第二關限時挑戰邏輯 ========== */
   function startStep2() {
     document.getElementById('view-step1').style.display = 'none';
     document.getElementById('view-step2').style.display = 'block';
@@ -670,9 +635,7 @@
 
   function generateQuizPool(min, max) {
     quizPool = [];
-    for (let i = min; i <= max; i++) {
-      quizPool.push(i);
-    }
+    for (let i = min; i <= max; i++) quizPool.push(i);
 
     for (let i = quizPool.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1));
@@ -827,10 +790,9 @@
     });
   }
 
-  // 💡 強韌名稱清洗過濾器：百分百精準還原「[4D] 張語城」
-  function sanitizeStudentDisplay(rawClassName, rawName) {
-    const text = (String(rawClassName) + " " + String(rawName));
-
+  // 識別學生所屬班別與正規姓名
+  function identifyStudent(rawClassName, rawName) {
+    const text = String(rawClassName) + " " + String(rawName);
     const roster = [
       { c: "4C", n: "葉卓霖" },
       { c: "4C", n: "林子蕙" },
@@ -845,14 +807,42 @@
     ];
 
     for (let st of roster) {
-      if (text.indexOf(st.n) !== -1) {
-        return `[${st.c}] ${st.n}`;
-      }
+      if (text.indexOf(st.n) !== -1) return st;
     }
+    return { c: String(rawClassName).replace(/[\[\]]/g, '').trim(), n: String(rawName).replace(/[\[\]]/g, '').trim() };
+  }
 
-    let cleanC = String(rawClassName).replace(/[\[\]]/g, '').trim();
-    let cleanN = String(rawName).replace(/[\[\]]/g, '').trim();
-    return `[${cleanC}] ${cleanN}`;
+  // 💡 關鍵修復：前端智慧聚合去重（Deduplication & Aggregation）
+  function aggregateLeaderboard(rawBoard) {
+    const map = new Map();
+
+    rawBoard.forEach(item => {
+      const student = identifyStudent(item.className, item.name);
+      const studentKey = student.n; // 依學生唯一姓名分組
+
+      const score = parseInt(item.score) || 0;
+      const attempts = parseInt(item.attempts) || 1;
+
+      if (!map.has(studentKey)) {
+        map.set(studentKey, {
+          className: student.c,
+          name: student.n,
+          stageName: item.stageName,
+          score: score, // 初次記錄分數
+          attempts: attempts // 初次記錄次數
+        });
+      } else {
+        const existing = map.get(studentKey);
+        // 保留歷史最高分
+        if (score > existing.score) {
+          existing.score = score;
+        }
+        // 如果 Sheet 上有多行紀錄，把次數累加！
+        existing.attempts += attempts;
+      }
+    });
+
+    return Array.from(map.values());
   }
 
   function fetchCloudLeaderboard(filterStageName, showSelectorTabs) {
@@ -881,23 +871,23 @@
         if (res && res.status === "success") {
           let board = res.leaderboard || [];
 
+          // 1. 先篩選當前程度
           board = board.filter(r => {
             let sName = String(r.stageName || '');
             let cName = String(r.className || '');
             return sName.indexOf(filterStageName) !== -1 || cName.indexOf(filterStageName) !== -1;
           });
 
-          board.sort((a, b) => {
-            let scoreA = parseInt(a.score) || 0;
-            let scoreB = parseInt(b.score) || 0;
-            let attA = parseInt(a.attempts) || 1;
-            let attB = parseInt(b.attempts) || 1;
+          // 2. 核心去重與累加合併！
+          board = aggregateLeaderboard(board);
 
-            if (scoreB !== scoreA) return scoreB - scoreA;
-            return attA - attB;
+          // 3. 排序：得分較高優先 ➔ 挑戰次數較少優先
+          board.sort((a, b) => {
+            if (b.score !== a.score) return b.score - a.score;
+            return a.attempts - b.attempts;
           });
 
-          renderTable(board);
+          renderTable(board, filterStageName);
         } else {
           document.getElementById('leaderboard-rows').innerHTML = `<tr><td colspan="5" style="color:#94a3b8; padding:20px 0;">目前無紀錄或讀取失敗</td></tr>`;
         }
@@ -909,7 +899,7 @@
       });
   }
 
-  function renderTable(board) {
+  function renderTable(board, stageTitle) {
     const tbody = document.getElementById('leaderboard-rows');
     tbody.innerHTML = '';
 
@@ -925,16 +915,12 @@
       else if (idx === 1) rankEmoji = "🥈";
       else if (idx === 2) rankEmoji = "🥉";
 
-      const cleanDisplay = sanitizeStudentDisplay(r.className, r.name);
-      const cleanScore = parseInt(r.score) || 0;
-      const cleanAttempts = parseInt(r.attempts) || 1;
-
       tr.innerHTML = `
         <td>${rankEmoji}</td>
-        <td><b>${cleanDisplay}</b></td>
-        <td><span style="font-size:12px; color:#475569; font-weight:bold;">${stages[currentStageIdx].name}</span></td>
-        <td style="color:var(--success); font-weight:bold;">${cleanScore} 分</td>
-        <td>${cleanAttempts} 次</td>
+        <td><b>[${r.className}] ${r.name}</b></td>
+        <td><span style="font-size:12px; color:#475569; font-weight:bold;">${stageTitle}</span></td>
+        <td style="color:var(--success); font-weight:bold;">${r.score} 分</td>
+        <td>${r.attempts} 次</td>
       `;
       tbody.appendChild(tr);
     });
